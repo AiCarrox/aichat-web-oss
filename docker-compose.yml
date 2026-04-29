@@ -1,0 +1,54 @@
+name: aichat-web-oss
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: aichat-oss-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aichat}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aichat}
+      POSTGRES_DB: ${POSTGRES_DB:-aichat}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aichat} -d ${POSTGRES_DB:-aichat}"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    expose:
+      - "5432"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: aichat-web-oss:latest
+    container_name: aichat-web-oss
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aichat}:${POSTGRES_PASSWORD:-aichat}@postgres:5432/${POSTGRES_DB:-aichat}?schema=public
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY is required}
+      DEFAULT_CHAT_MODEL: ${DEFAULT_CHAT_MODEL:-gpt-4o}
+      DEFAULT_IMAGE_MODEL: ${DEFAULT_IMAGE_MODEL:-gpt-image-1}
+      SHARE_SWEEP_INTERVAL_SEC: ${SHARE_SWEEP_INTERVAL_SEC:-60}
+      LOG_DIR: /app/logs
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "${APP_PORT:-3081}:3000"
+    volumes:
+      - ./logs:/app/logs
+      - ./public/generated:/app/public/generated
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/self"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
+    name: aichat_oss_pgdata
