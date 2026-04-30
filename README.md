@@ -21,6 +21,15 @@
 
 ---
 
+## 截图
+
+| | |
+|---|---|
+| ![填写 ID](docs/screenshots/1.png) | ![带生图的会话](docs/screenshots/2.png) |
+| ![分享](docs/screenshots/3.png) | ![配置](docs/screenshots/4.png) |
+
+---
+
 ## 技术栈
 
 | 层 | 选型 |
